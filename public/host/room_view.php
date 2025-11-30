@@ -1,0 +1,52 @@
+<?php
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/db.php';
+
+if (!is_host()) die("Host only");
+
+$hostId = $_SESSION['user']['id'];
+$roomId = (int)($_GET['id'] ?? 0);
+
+// Validate room ownership
+$stmt = $pdo->prepare("SELECT * FROM rooms WHERE id = :id AND owner_id = :host");
+$stmt->execute([':id' => $roomId, ':host' => $hostId]);
+$room = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$room) die("Room not found.");
+
+$photosStmt = $pdo->prepare("SELECT * FROM room_photos WHERE room_id = :id ORDER BY sort_order ASC, id DESC");
+$photosStmt->execute([':id' => $roomId]);
+$photos = $photosStmt->fetchAll(PDO::FETCH_ASSOC);
+
+include __DIR__ . '/header.php';
+?>
+
+<div class="section-heading">
+  <h2><?php echo e($room['name']); ?></h2>
+</div>
+
+<div class="form-card">
+  <p><strong>Location:</strong> <?php echo e($room['location_text']); ?></p>
+  <p><strong>Price:</strong> <?php echo format_ksh($room['price_ksh']); ?> / night</p>
+  <p><strong>Description:</strong><br><?php echo nl2br(e($room['description'])); ?></p>
+
+  <div class="hero-actions">
+    <a href="room_edit.php?id=<?php echo $roomId; ?>" class="btn-primary">Edit Room</a>
+    <a href="calendar.php?room_id=<?php echo $roomId; ?>" class="btn-outline">Manage Calendar</a>
+    <a href="bookings.php?room_id=<?php echo $roomId; ?>" class="btn-outline">View Bookings</a>
+    <a href="room_gallery.php?id=<?php echo $roomId; ?>" class="btn-outline">Manage Photos</a>
+  </div>
+</div>
+
+<h3>Gallery</h3>
+
+<div class="card-grid">
+<?php foreach ($photos as $p): ?>
+  <div class="card">
+    <div class="card-image">
+      <img src="../uploads/room_photos/<?php echo e($p['image_path']); ?>" style="width:100%;border-radius:8px;">
+    </div>
+  </div>
+<?php endforeach; ?>
+</div>
+
+<?php include __DIR__ . '/footer.php'; ?>
