@@ -8,9 +8,9 @@ if (!is_host()) die("Host only");
 $hostId = $_SESSION['user']['id'];
 
 $sql = "
-SELECT 
-    b.*, 
-    r.name AS room_name, 
+SELECT
+    b.*,
+    r.name AS room_name,
     u.full_name, u.phone, u.email,
     u.avatar_path, u.id_card_path
 FROM bookings b
@@ -64,9 +64,9 @@ include __DIR__ . '/../../includes/host_header.php';
 }
 /* New style for View Details button */
 .btn-view {
-    background-color: #f8f9fa; 
-    border: 1px solid #ced4da; 
-    color: #495057; 
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    color: #495057;
 }
 .btn-view:hover {
     background-color: #e2e6ea;
@@ -95,8 +95,8 @@ include __DIR__ . '/../../includes/host_header.php';
 
     <div class="id-box" style="margin-top:10px;">
       <?php if ($b['id_card_path']): ?>
-        <a href="../uploads/id_cards/<?php echo e($b['id_card_path']); ?>" target="_blank">
-          <img src="../uploads/id_cards/<?php echo e($b['id_card_path']); ?>">
+        <a href="<?php echo e(public_base()); ?>document.php?file=<?php echo e($b['id_card_path']); ?>" target="_blank">
+          <img src="<?php echo e(public_base()); ?>document.php?file=<?php echo e($b['id_card_path']); ?>">
         </a>
       <?php else: ?>
         <small>No ID uploaded</small>
@@ -117,8 +117,8 @@ include __DIR__ . '/../../includes/host_header.php';
     <p><strong>Status:</strong> <?php echo e($b['status']); ?></p>
 
     <div class="action-buttons" style="margin-top:10px;">
-      
-      <a href="booking_view.php?id=<?php echo (int)$b['id']; ?>" class="btn-sm btn-view">View Details</a> 
+
+      <a href="booking_view.php?id=<?php echo (int)$b['id']; ?>" class="btn-sm btn-view">View Details</a>
 
       <?php if ($b['status'] === 'Pending'): ?>
         <a href="bookings_update.php?id=<?php echo (int)$b['id']; ?>&action=approve" class="btn-primary btn-sm">Approve</a>

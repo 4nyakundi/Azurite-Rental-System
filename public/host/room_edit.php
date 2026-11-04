@@ -37,26 +37,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($name === '') {
         $errors[] = 'Name is required.';
     }
-    if ($price === '') {
+    if (!is_numeric($price) || (float)$price <= 0 || (float)$price > 99999999) {
         $errors[] = 'Price is required.';
     }
 
     // Optional new cover image
-    if (!empty($_FILES['cover']['name'])) {
-        $ext = strtolower(pathinfo($_FILES['cover']['name'], PATHINFO_EXTENSION));
-        $allowed = ['jpg','jpeg','png'];
-
-        if (!in_array($ext, $allowed, true)) {
-            $errors[] = 'Invalid image type. Only JPG/PNG allowed.';
-        } else {
-            $safeName = 'room_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-            $target   = $uploadDir . $safeName;
-
-            if (!move_uploaded_file($_FILES['cover']['tmp_name'], $target)) {
-                $errors[] = 'Failed to upload image.';
-            } else {
-                $fileName = $safeName;
-            }
+    if (!$errors) {
+        try {
+            $fileName = save_upload('cover', $uploadDir) ?? $fileName;
+        } catch (RuntimeException $exception) {
+            $errors[] = $exception->getMessage();
         }
     }
 
@@ -102,6 +92,7 @@ include __DIR__ . '/header.php';
   <?php endif; ?>
 
   <form method="post" enctype="multipart/form-data">
+<?php echo csrf_field(); ?>
     <label>Name</label>
     <input type="text" name="name" value="<?php echo e($room['name']); ?>" required>
 

@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
+require_login();
+
 if (!isset($_GET['ref'])) {
     die("Invalid booking reference.");
 }
@@ -14,9 +16,9 @@ $stmt = $pdo->prepare("
     FROM bookings b
     LEFT JOIN rooms r ON r.id = b.room_id
     LEFT JOIN users u ON u.id = b.tenant_id
-    WHERE b.ref_code = :ref
+    WHERE b.ref_code = :ref AND b.tenant_id = :tenant
 ");
-$stmt->execute([':ref' => $ref]);
+$stmt->execute([':ref' => $ref, ':tenant' => current_user()['id']]);
 $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$booking) die("Booking not found.");
@@ -116,11 +118,11 @@ include __DIR__ . '/../includes/header.php';
 <div class="success-container">
 
     <div class="success-card">
-        
+
         <div class="success-icon">✔️</div>
 
-        <div class="success-title">Booking Confirmed!</div>
-        <div class="success-sub">Thank you for booking with Azurite Homes.</div>
+        <div class="success-title">Booking Request Received</div>
+        <div class="success-sub">Your request has been saved. Track approval in My Bookings.</div>
 
         <p class="big-ref">Booking Reference: <?php echo e($ref); ?></p>
 
@@ -130,6 +132,7 @@ include __DIR__ . '/../includes/header.php';
             <p><strong>Location:</strong> <?php echo e($booking['location_text']); ?></p>
             <p><strong>Check-in:</strong> <?php echo e($booking['checkin_date']); ?></p>
             <p><strong>Check-out:</strong> <?php echo e($booking['checkout_date']); ?></p>
+            <p><strong>Status:</strong> <?php echo e($booking['status']); ?></p>
             <p><strong>Guests:</strong> <?php echo (int)$booking['guests']; ?></p>
             <p><strong>Total Price:</strong> KSh <?php echo number_format($booking['total_amount_ksh'], 2); ?></p>
         </div>

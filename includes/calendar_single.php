@@ -6,11 +6,11 @@
 // NOTE: This assumes $bookings is an array of objects/arrays with checkin_date and checkout_date keys.
 function isBooked($date, $bookings) {
     $dateTs = strtotime($date);
-    
+
     foreach ($bookings as $b) {
         $checkinTs = strtotime($b['checkin_date']);
         $checkoutTs = strtotime($b['checkout_date']);
-        
+
         // A day is booked if it is on or after check-in AND strictly before check-out.
         if ($dateTs >= $checkinTs && $dateTs < $checkoutTs) {
             return true;
@@ -28,8 +28,8 @@ function isBooked($date, $bookings) {
 function render_calendar($pdo, $roomId, $canToggle = false) {
 
     // Get month and year from URL parameters, default to current month/year
-    $month = isset($_GET['m']) ? (int)$_GET['m'] : date('n');
-    $year  = isset($_GET['y']) ? (int)$_GET['y'] : date('Y');
+    $month = max(1, min(12, (int)($_GET['m'] ?? date('n'))));
+    $year = max(1970, min(2100, (int)($_GET['y'] ?? date('Y'))));
 
     // Fix invalid values and normalize month/year for navigation
     while ($month < 1) { $month += 12; $year--; }
@@ -39,9 +39,9 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
     $monthName = date('F', mktime(0, 0, 0, $month, 1, $year));
     $numDays = cal_days_in_month(CAL_GREGORIAN, $month, $year);
     $firstDay = date('w', mktime(0, 0, 0, $month, 1, $year)); // 0=Sunday, 6=Saturday
-    
+
     // --- 1. Fetch Blocked and Booked Dates ---
-    
+
     $startDate = date('Y-m-01', mktime(0, 0, 0, $month, 1, $year));
     $endDate = date('Y-m-t', mktime(0, 0, 0, $month, 1, $year));
 
@@ -52,10 +52,10 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
 
     // Fetch Booked Dates (Confirmed/Approved/CheckedIn are states that block the room)
     $bookingStmt = $pdo->prepare("
-        SELECT checkin_date, checkout_date 
-        FROM bookings 
-        WHERE room_id = ? 
-          AND status IN ('Confirmed', 'Approved', 'CheckedIn') 
+        SELECT checkin_date, checkout_date
+        FROM bookings
+        WHERE room_id = ?
+          AND status IN ('Pending', 'Confirmed', 'Approved', 'CheckedIn')
           AND (checkin_date <= ? AND checkout_date >= ?)
     ");
     // We check for bookings that start before or during the month AND end after or during the month
@@ -73,10 +73,10 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
 
     $currentUrl = strtok($_SERVER["REQUEST_URI"], '?'); // Get the base file path
     $params = ['room_id' => $roomId]; // Base parameters for navigation links
-    
+
     // Determine the path to the toggle script (depends on who is calling it)
-    $togglePath = $canToggle ? '../host/toggle_day.php' : ''; 
-    
+    $togglePath = $canToggle ? '../host/toggle_day.php' : '';
+
     // Build the 'return' URL for the toggle script to redirect back to the current calendar view
     $returnUrl = urlencode($currentUrl . "?" . http_build_query(array_merge($params, ['m' => $month, 'y' => $year])));
 
@@ -101,19 +101,19 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
                 <?php
                 // Render leading empty cells
                 $dayOfWeek = $firstDay;
-                if ($firstDay == 0) $dayOfWeek = 7; // Treat Sunday as the 7th day for the loop index
-                
+                $dayOfWeek = $firstDay + 1; // Treat Sunday as the 7th day for the loop index
+
                 for ($i = 1; $i < $dayOfWeek; $i++) {
                     echo "<td class='empty-day'></td>";
                 }
-                
+
                 // --- 4. Render Days ---
                 for ($d = 1; $d <= $numDays; $d++):
                     $date = date('Y-m-d', mktime(0, 0, 0, $month, $d, $year));
                     $isBlocked = in_array($date, $blockedDates);
                     $isDayBooked = isBooked($date, $bookings);
                     $today = date('Y-m-d');
-                    
+
                     $class = '';
                     $statusText = '';
                     $actionUrl = '';
@@ -141,12 +141,12 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
 
                     // Determine if the day is clickable
                     $isClickable = $canToggle && !$isDayBooked && $date >= $today;
-                    
+
                     ?>
-                    
+
                     <td class="<?= $class ?>" style="height: 100px;">
                         <div class="day-num"><?= $d ?></div>
-                        
+
                         <?php if ($isClickable): ?>
                             <a href="<?= $actionUrl ?>" class="toggle-link">
                                 <?= $isBlocked ? 'Unblock' : 'Block' ?>
@@ -158,14 +158,14 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
                         <?php endif; ?>
 
                     </td>
-                    
+
                     <?php
                     // Start a new row every 7 days (including initial empty cells)
-                    if (($d + $firstDay - 1) % 7 == 0) echo "</tr><tr>";
+                    if (($d + $firstDay) % 7 == 0) echo "</tr><tr>";
                 endfor;
-                
+
                 // Render trailing empty cells
-                while (($d + $firstDay - 1) % 7 != 0 && $d <= $numDays + 7) {
+                while (($d + $firstDay) % 7 != 0 && $d <= $numDays + 7) {
                     echo "<td class='empty-day'></td>";
                     $d++;
                 }
@@ -224,7 +224,7 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
         transition: all 0.2s;
         cursor: default;
     }
-    
+
     /* Day Status Colors */
     .day-num {
         font-size: 18px;
@@ -244,9 +244,9 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
     }
 
     /* Available */
-    .c-available { 
-        background: #f1fff1; 
-        color: #006400; 
+    .c-available {
+        background: #f1fff1;
+        color: #006400;
         border-color: #d0f7d0;
     }
     .c-available .toggle-link {
@@ -256,11 +256,11 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
     .c-available .toggle-link:hover {
         background: #218838;
     }
-    
+
     /* Blocked */
-    .c-blocked { 
-        background: #fff1f1; 
-        color: #721c24; 
+    .c-blocked {
+        background: #fff1f1;
+        color: #721c24;
         border-color: #ffd0d0;
     }
     .c-blocked .toggle-link {
@@ -270,11 +270,11 @@ function render_calendar($pdo, $roomId, $canToggle = false) {
     .c-blocked .toggle-link:hover {
         background: #c82333;
     }
-    
+
     /* Booked */
-    .c-booked { 
-        background: #fffacd; 
-        color: #856404; 
+    .c-booked {
+        background: #fffacd;
+        color: #856404;
         border-color: #ffeeb3;
     }
     .c-booked .label {

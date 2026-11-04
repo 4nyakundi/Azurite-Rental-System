@@ -19,19 +19,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([':u' => $username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$user || md5($password) !== $user['password_md5']) {
+        if (!$user || !$user['is_active'] || !verify_password($password, $user['password_md5'])) {
             $errors[] = "Invalid username or password.";
         } else {
+            if (password_needs_rehash($user['password_md5'], PASSWORD_DEFAULT)) {
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $pdo->prepare('UPDATE users SET password_md5=? WHERE id=?')->execute([$hash, $user['id']]);
+            }
+            session_regenerate_id(true);
+            unset($user['password_md5']);
             // Login success
             $_SESSION['user'] = $user;
 
             // Smart redirect based on role
             if ($user['role'] === 'admin') {
                 redirect('admin/index.php');
-            } 
+            }
             elseif ($user['role'] === 'host') {
                 redirect('host/index.php');
-            } 
+            }
             else { // tenant
                 redirect('index.php');
             }
@@ -56,6 +62,7 @@ include __DIR__ . '/../includes/header.php';
   <?php endif; ?>
 
   <form method="post">
+<?php echo csrf_field(); ?>
     <div class="form-row">
       <label>Username</label>
       <input type="text" name="username" value="<?php echo e($username); ?>" required>

@@ -88,7 +88,7 @@ include __DIR__ . '/../includes/header.php';
     display: block;
 }
 
-.booking-box input, 
+.booking-box input,
 .booking-box select {
     width: 100%;
     padding: 10px 12px;
@@ -123,8 +123,8 @@ include __DIR__ . '/../includes/header.php';
 <div class="container" style="max-width:1100px; margin:auto; padding-top:30px;">
 
     <!-- HERO IMAGE -->
-    <img src="<?php echo ($room['cover_image']) 
-            ? 'uploads/room_photos/' . $room['cover_image'] 
+    <img src="<?php echo ($room['cover_image'])
+            ? 'uploads/room_photos/' . e($room['cover_image'])
             : 'assets/img/outside_2.jpg'; ?>"
          alt="Room Cover" class="room-hero-img">
 
@@ -167,12 +167,12 @@ include __DIR__ . '/../includes/header.php';
             <div class="calendar-box" style="margin-top: 25px;">
                 <h3 class="section-title">Availability Calendar</h3>
 
-    <iframe 
-        src="room_availability.php?id=<?php echo (int)$room['id']; ?>"
+    <iframe
+        title="Availability calendar" src="room_availability.php?id=<?php echo (int)$room['id']; ?>"
         style="width:100%; height:450px; border:0; border-radius:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
     </iframe>
-   
-   
+
+
             </div>
         </div>
 
@@ -189,6 +189,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php endif; ?>
 
                 <form action="book.php" method="POST">
+<?php echo csrf_field(); ?>
                     <input type="hidden" name="room_id" value="<?php echo (int)$room['id']; ?>">
 
                     <label>Check In:</label>

@@ -7,8 +7,8 @@ if (!is_admin()) die("Unauthorized access.");
 $bookingId = $_GET['id'] ?? 0;
 
 $stmt = $pdo->prepare("
-    SELECT 
-        b.*, 
+    SELECT
+        b.*,
         r.name AS room_name, r.location_text, r.price_ksh,
         u.full_name, u.email, u.phone, u.avatar_path, u.id_card_path
     FROM bookings b
@@ -117,7 +117,7 @@ include "../../includes/admin_header.php";
 
             <p><strong>Status:</strong> <?php echo e($booking['status']); ?></p>
 
-            <p><strong>Total Amount:</strong> 
+            <p><strong>Total Amount:</strong>
                 KSh <?php echo number_format($booking['total_amount_ksh']); ?>
             </p>
 
@@ -133,14 +133,14 @@ include "../../includes/admin_header.php";
             <p><strong>Phone:</strong> <?php echo e($booking['phone']); ?></p>
 
             <p><strong>Avatar:</strong></p>
-            <img 
-                src="/Azurite-Rental-System/public/uploads/avatars/<?php echo $booking['avatar_path'] ?: 'default.png'; ?>" 
+            <img
+                src="/Azurite-Rental-System/public/uploads/avatars/<?php echo $booking['avatar_path'] ?: 'default.png'; ?>"
                 class="booking-img"
             >
 
             <p><strong>ID Card:</strong></p>
-            <img 
-                src="/Azurite-Rental-System/public/uploads/id_cards/<?php echo $booking['id_card_path'] ?: 'no_id.png'; ?>" 
+            <img
+                src="<?php echo e(public_base()); ?>document.php?file=<?php echo $booking['id_card_path'] ?: 'no_id.png'; ?>"
                 class="booking-img-id"
             >
         </div>

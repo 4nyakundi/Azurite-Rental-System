@@ -38,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($email === '')     $errors[] = 'Email is required.';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email format.';
     if ($password === '')  $errors[] = 'Password is required.';
-    if (strlen($password) < 4) $errors[] = 'Password should be at least 4 characters.';
+    if (strlen($password) < 8 || strlen($password) > 72 || strpos($password, "\0") !== false) $errors[] = 'Password should be between 8 and 72 characters.';
+    if (strlen($full_name) > 150 || strlen($username) > 80 || strlen($email) > 150 || strlen($phone) > 30) $errors[] = 'One or more account fields are too long.';
     if ($password !== $confirm) $errors[] = 'Password and confirmation do not match.';
 
     if (!in_array($role, ['tenant','host'], true)) {
@@ -76,78 +77,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Handle uploads if still no errors
     if (!$errors) {
-        // Ensure upload directories exist
-        $idCardDir = __DIR__ . '/uploads/id_cards/';
-        $avatarDir = __DIR__ . '/uploads/avatars/';
-
-        if (!is_dir($idCardDir)) {
-            mkdir($idCardDir, 0777, true);
-        }
-        if (!is_dir($avatarDir)) {
-            mkdir($avatarDir, 0777, true);
-        }
-
-        // ID Card upload
-        if (!empty($_FILES['id_card']['name'])) {
-            $ext = strtolower(pathinfo($_FILES['id_card']['name'], PATHINFO_EXTENSION));
-            $allowed = ['jpg','jpeg','png','pdf'];
-
-            if (!in_array($ext, $allowed, true)) {
-                $errors[] = 'Invalid ID card file type. Use JPG, PNG or PDF.';
-            } else {
-                $safeName = 'id_' . time() . '_' . rand(1000,9999) . '.' . $ext;
-                $target   = $idCardDir . $safeName;
-                if (!move_uploaded_file($_FILES['id_card']['tmp_name'], $target)) {
-                    $errors[] = 'Failed to upload ID card file.';
-                } else {
-                    $idCardFileName = $safeName;
-                }
-            }
-        }
-
-        // Avatar upload (optional)
-        if (!$errors && !empty($_FILES['avatar']['name'])) {
-            $ext = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
-            $allowed = ['jpg','jpeg','png'];
-
-            if (!in_array($ext, $allowed, true)) {
-                $errors[] = 'Invalid avatar file type. Use JPG or PNG.';
-            } else {
-                $safeName = 'avatar_' . time() . '_' . rand(1000,9999) . '.' . $ext;
-                $target   = $avatarDir . $safeName;
-                if (!move_uploaded_file($_FILES['avatar']['tmp_name'], $target)) {
-                    $errors[] = 'Failed to upload avatar.';
-                } else {
-                    $avatarFileName = $safeName;
-                }
-            }
+        try {
+            $idCardFileName = save_upload('id_card', __DIR__ . '/../storage/id_cards', true);
+            $avatarFileName = save_upload('avatar', __DIR__ . '/uploads/avatars');
+        } catch (RuntimeException $exception) {
+            $errors[] = $exception->getMessage();
         }
     }
 
     // If everything ok, insert into DB
     if (!$errors) {
-        $stmt = $pdo->prepare("
-            INSERT INTO users (full_name, username, email, phone, password_md5, role, id_card_path, avatar_path, is_active, created_at)
-            VALUES (:full_name, :username, :email, :phone, :pwd, :role, :id_card, :avatar, 1, NOW())
-        ");
-        $stmt->execute([
-            ':full_name' => $full_name,
-            ':username'  => $username,
-            ':email'     => $email,
-            ':phone'     => $phone,
-            ':pwd'       => md5($password),   // per school requirement
-            ':role'      => $role,
-            ':id_card'   => $idCardFileName,
-            ':avatar'    => $avatarFileName
-        ]);
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO users (full_name, username, email, phone, password_md5, role, id_card_path, avatar_path, is_active, created_at)
+                VALUES (:full_name, :username, :email, :phone, :pwd, :role, :id_card, :avatar, 1, NOW())
+            ");
+            $stmt->execute([
+                ':full_name' => $full_name,
+                ':username'  => $username,
+                ':email'     => $email,
+                ':phone'     => $phone,
+                ':pwd'       => password_hash($password, PASSWORD_DEFAULT),
+                ':role'      => $role,
+                ':id_card'   => $idCardFileName,
+                ':avatar'    => $avatarFileName
+            ]);
 
-        // Reset captcha so it can't be reused
-        unset($_SESSION['reg_captcha_a'], $_SESSION['reg_captcha_b']);
+            // Reset captcha so it can't be reused
+            unset($_SESSION['reg_captcha_a'], $_SESSION['reg_captcha_b']);
 
-        set_flash('success', 'Account created successfully. You can now log in.');
-        redirect('login.php');
+            set_flash('success', 'Account created successfully. You can now log in.');
+            redirect('login.php');
+        } catch (PDOException $exception) {
+            error_log($exception->getMessage());
+            $errors[] = 'Unable to create your account. Please check your details and try again.';
+        }
     } else {
         // regenerate captcha for next try
         $_SESSION['reg_captcha_a'] = rand(1, 9);
@@ -177,6 +142,7 @@ $b = $_SESSION['reg_captcha_b'] ?? 0;
   <?php endif; ?>
 
   <form method="post" enctype="multipart/form-data">
+<?php echo csrf_field(); ?>
     <div class="form-row">
       <label>Full Name</label>
       <input type="text" name="full_name" required

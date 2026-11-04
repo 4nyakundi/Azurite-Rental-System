@@ -1,7 +1,9 @@
 /* AZURITE RENTAL SYSTEM – FULL DATABASE SQL */
 
+/* DEMO RESET ONLY: this file replaces all application tables. Back up first. */
+SET FOREIGN_KEY_CHECKS=0;
 /* Create or select the database */
-CREATE DATABASE IF NOT EXISTS azurite_rental;
+CREATE DATABASE IF NOT EXISTS azurite_rental CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE azurite_rental;
 
 /* ---------------------------------------------------
@@ -14,7 +16,7 @@ CREATE TABLE users (
   username VARCHAR(80) NOT NULL UNIQUE,
   email VARCHAR(150) NOT NULL UNIQUE,
   phone VARCHAR(30),
-  password_md5 VARCHAR(64) NOT NULL,
+  password_md5 VARCHAR(255) NOT NULL,
   role ENUM('admin','host','tenant') NOT NULL DEFAULT 'tenant',
   id_card_path VARCHAR(255),
   avatar_path VARCHAR(255),
@@ -140,3 +142,5 @@ CREATE TABLE room_block_dates (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
+
+SET FOREIGN_KEY_CHECKS=1;

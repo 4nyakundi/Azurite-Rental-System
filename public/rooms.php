@@ -3,29 +3,40 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 $q = trim($_GET['q'] ?? '');
+$checkin = (string)($_GET['checkin'] ?? '');
+$checkout = (string)($_GET['checkout'] ?? '');
+$error = '';
+$params = [];
+$sql = "SELECT r.id,r.name,r.price_ksh,r.location_text,r.cover_image,c.name AS category FROM rooms r LEFT JOIN room_categories c ON c.id=r.category_id WHERE r.is_active=1";
 if ($q !== '') {
-    $stmt = $pdo->prepare("SELECT r.id, r.name, r.price_ksh, r.location_text, r.cover_image, c.name AS category
-                           FROM rooms r
-                           LEFT JOIN room_categories c ON c.id = r.category_id
-                           WHERE r.is_active = 1 AND (r.name LIKE :q OR r.location_text LIKE :q)
-                           ORDER BY r.id DESC");
-    $stmt->execute([':q' => '%' . $q . '%']);
-} else {
-    $stmt = $pdo->query("SELECT r.id, r.name, r.price_ksh, r.location_text, r.cover_image, c.name AS category
-                         FROM rooms r
-                         LEFT JOIN room_categories c ON c.id = r.category_id
-                         WHERE r.is_active = 1
-                         ORDER BY r.id DESC");
+    $sql .= ' AND (r.name LIKE ? OR r.location_text LIKE ?)';
+    $params = ['%' . $q . '%', '%' . $q . '%'];
 }
+if ($checkin !== '' || $checkout !== '') {
+    if (!valid_date($checkin) || !valid_date($checkout) || $checkin < date('Y-m-d') || $checkout <= $checkin) {
+        $error = 'Choose valid future check-in and check-out dates.';
+        $sql .= ' AND 1=0';
+    } else {
+        $sql .= " AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.room_id=r.id AND b.status IN ('Pending','Approved','Confirmed','CheckedIn') AND b.checkin_date<? AND b.checkout_date>?) AND NOT EXISTS (SELECT 1 FROM room_block_dates d WHERE d.room_id=r.id AND d.block_date>=? AND d.block_date<?)";
+        array_push($params, $checkout, $checkin, $checkin, $checkout);
+    }
+}
+$sql .= ' ORDER BY r.id DESC';
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 include __DIR__ . '/../includes/header.php';
 ?>
-<div class="section-heading">
-  <h2>All Houses</h2>
-  <form method="get">
-    <input type="text" name="q" placeholder="Search by name or location" value="<?php echo e($q); ?>" style="padding:8px 10px;border-radius:999px;border:1px solid #cbd5e1;">
-  </form>
-</div>
+<div class="section-heading"><div><div class="eyebrow">Make yourself at home</div><h2>Explore coastal stays</h2></div><span><?php echo count($rooms); ?> <?php echo count($rooms) === 1 ? 'stay' : 'stays'; ?> found</span></div>
+<form method="get" class="search-filters">
+  <label>Location or house<input type="search" name="q" value="<?= e($q) ?>" placeholder="Nyali, Mombasa, Diani…"></label>
+  <label>Check-in<input type="date" name="checkin" value="<?= e($checkin) ?>"></label>
+  <label>Check-out<input type="date" name="checkout" value="<?= e($checkout) ?>"></label>
+  <button class="btn-primary" type="submit">Find a stay</button>
+  <a href="rooms.php">Clear filters</a>
+</form>
+<?php if ($error): ?><div class="alert error" role="alert"><?= e($error) ?></div><?php endif; ?>
+<?php if (!$rooms && !$error): ?><div class="empty-state"><h3>No stays match your search</h3><p>Try another location or date range.</p><a href="rooms.php">View all stays</a></div><?php endif; ?>
 <div class="card-grid">
   <?php foreach ($rooms as $r): ?>
     <div class="card">

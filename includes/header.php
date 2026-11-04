@@ -1,58 +1,44 @@
-<?php if (session_status() === PHP_SESSION_NONE) { session_start(); } ?>
-<?php 
-$base = '/Azurite-Rental-System-Modern/public/'; 
-?>
 <?php
-// Detect base path dynamically
-$base = "/AZURITE-RENTAL-SYSTEM/public/";
+require_once __DIR__ . '/helpers.php';
+$base = public_base();
 ?>
-<link rel="stylesheet" href="<?php echo $base; ?>assets/css/style.css">
-<link rel="stylesheet" href="<?php echo $base; ?>assets/css/modern.css">
-<link rel="stylesheet" href="<?php echo $base; ?>assets/css/select2.min.css">
-<link rel="stylesheet" href="<?php echo $base; ?>assets/css/jquery.datetimepicker.min.css">
-<link rel="stylesheet" href="<?php echo $base; ?>assets/css/jquery-te-1.4.0.css">
-<link rel="stylesheet" href="<?php echo $base; ?>assets/css/matarial.css">
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Azurite Properties - Rental System</title>
+  <title>Azurite Properties · Coastal stays in Kenya</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/modern.css">
-  <link rel="stylesheet" href="assets/css/select2.min.css">
-  <link rel="stylesheet" href="assets/css/jquery.datetimepicker.min.css">
-  <link rel="stylesheet" href="assets/css/jquery-te-1.4.0.css">
-  <link rel="stylesheet" href="assets/css/matarial.css">
+  <meta name="description" content="Find your next coastal stay with Azurite. Explore apartments and houses in Mombasa, Nyali and Diani.">
+  <link rel="stylesheet" href="<?= e($base) ?>assets/css/style.css">
+  <link rel="stylesheet" href="<?= e($base) ?>assets/css/modern.css">
+  <link rel="stylesheet" href="<?= e($base) ?>assets/css/polish.css">
+  <script src="<?= e($base) ?>assets/js/forms.js" defer></script>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 <header class="top-header">
   <div class="container">
-    <div class="logo">
-      <img src="assets/img/azurite_logo_white_bg_.jpg" alt="Azurite Properties">
-    </div>
-    <nav class="main-nav">
+    <a class="brand" href="<?= e($base) ?>index.php" aria-label="Azurite home"><span class="brand-mark">A</span><span>AZURITE<small>PROPERTIES &amp; STAYS</small></span></a>
+    <nav class="main-nav" aria-label="Main navigation">
       <ul>
-        <li><a href="index.php">Home</a></li>
-        <li><a href="rooms.php">Houses</a></li>
-        <?php if (!empty($_SESSION['user']) && $_SESSION['user']['role']==='admin'): ?>
-          <li><a href="admin/index.php">Admin</a></li>
-        <?php elseif (!empty($_SESSION['user']) && $_SESSION['user']['role']==='host'): ?>
-          <li><a href="admin/rooms.php">Host Panel</a></li>
-        <?php endif; ?>
-        <?php if (!empty($_SESSION['user'])): ?>
-          <li><a href="profile.php">Profile</a></li>
-          <li><a href="my_bookings.php">My Bookings</a></li>
-          <li><a href="logout.php">Logout</a></li>
+        <li><a href="<?= e($base) ?>index.php">Home</a></li>
+        <li><a href="<?= e($base) ?>rooms.php">Explore stays</a></li>
+        <?php if (is_admin()): ?><li><a href="<?= e($base) ?>admin/index.php">Dashboard</a></li>
+        <?php elseif (is_host()): ?><li><a href="<?= e($base) ?>host/index.php">Host dashboard</a></li><?php endif; ?>
+        <?php if (is_logged_in()): ?>
+          <li><a href="<?= e($base) ?>profile.php">Profile</a></li>
+          <?php if (is_tenant()): ?><li><a href="<?= e($base) ?>my_bookings.php">My bookings</a></li><?php endif; ?>
+          <li><a href="<?= e($base) ?>logout.php">Sign out</a></li>
         <?php else: ?>
-          <li><a href="login.php">Login</a></li>
-          <li><a href="register.php">Sign Up</a></li>
+          <li><a href="<?= e($base) ?>login.php">Sign in</a></li>
+          <li><a class="nav-cta" href="<?= e($base) ?>register.php">Get started</a></li>
         <?php endif; ?>
       </ul>
     </nav>
   </div>
 </header>
-<main>
-  <div class="container">
+<main id="main-content">
+<div class="container">
+<?php foreach (['success', 'error', 'info'] as $kind): ?>
+  <?php if ($message = flash($kind)): ?><div class="alert <?= e($kind) ?>" role="status"><?= e($message) ?></div><?php endif; ?>
+<?php endforeach; ?>

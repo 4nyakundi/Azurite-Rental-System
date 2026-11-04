@@ -1,0 +1,11 @@
+/zip branch/
+*.rar
+*.zip
+/includes/config.local.php
+.env
+/public/uploads/*/*
+!/public/uploads/*/.htaccess
+/storage/
+/tools/__pycache__/
+/tests/*.log
+/tests/__pycache__/

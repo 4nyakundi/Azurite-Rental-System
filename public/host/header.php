@@ -10,16 +10,19 @@ if (!is_host()) {
 $host = current_user();
 
 // Base URL for HOST AREA only
-$base = "/Azurite-Rental-System/public/host/";
-$publicBase = "/Azurite-Rental-System/public/";
+$base = public_base() . 'host/';
+$publicBase = public_base();
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Azurite Host Panel</title>
   <link rel="stylesheet" href="<?php echo $publicBase; ?>assets/css/style.css">
   <link rel="stylesheet" href="<?php echo $publicBase; ?>assets/css/modern.css">
+<link rel="stylesheet" href="<?php echo $publicBase; ?>assets/css/polish.css">
+<script src="<?php echo $publicBase; ?>assets/js/forms.js" defer></script>
 </head>
 <body class="admin-body">
   <div class="admin-shell">
@@ -38,7 +41,7 @@ $publicBase = "/Azurite-Rental-System/public/";
         <a href="<?php echo $base; ?>calendar.php">My Calendar</a>
         <a href="<?php echo $base; ?>profile.php">Profile</a>
         <a href="<?php echo $base; ?>report_bookings.php">Reports</a>
-        
+
       </nav>
     </aside>
 

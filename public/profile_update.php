@@ -1,86 +1,42 @@
 <?php
-require_once "../includes/db.php";
-require_once "../includes/helpers.php";
-
-if (!is_logged_in()) {
-    header("Location: login.php");
-    exit;
-}
-
-$userId = $_SESSION['user']['id'];
-
-// Fetch current user
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-$stmt->execute([$userId]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$user) {
-    header("Location: profile.php?error=User not found");
-    exit;
-}
-
-// Get POST data
-$full_name = trim($_POST['full_name']);
-$username  = trim($_POST['username']);
-$email     = trim($_POST['email']);
-$phone     = trim($_POST['phone']);
-
-// ---------- VALIDATIONS ----------
-$checkUser = $pdo->prepare("SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?");
-$checkUser->execute([$username, $email, $userId]);
-if ($checkUser->fetch()) {
-    header("Location: profile.php?error=Username or email already in use");
-    exit;
-}
-
-// ---------- HANDLE AVATAR UPLOAD ----------
-$avatarName = $user['avatar_path'];
-if (!empty($_FILES['avatar']['name'])) {
-    $avatarName = "avatar_" . time() . "_" . rand(1000,9999) . ".jpg";
-    move_uploaded_file($_FILES['avatar']['tmp_name'], "../uploads/avatars/" . $avatarName);
-}
-
-// ---------- HANDLE ID CARD UPLOAD ----------
-$idCardName = $user['id_card_path'];
-if (!empty($_FILES['id_card']['name'])) {
-    $idCardName = "idcard_" . time() . "_" . rand(1000,9999) . ".jpg";
-    move_uploaded_file($_FILES['id_card']['tmp_name'], "../uploads/id_cards/" . $idCardName);
-}
-
-// ---------- HANDLE PASSWORD CHANGE ----------
-if (!empty($_POST['current_password'])) {
-    $old = md5($_POST['current_password']);
-    $new = $_POST['new_password'];
-    $confirm = $_POST['confirm_password'];
-
-    if ($old !== $user['password_md5']) {
-        header("Location: profile.php?error=Current password is incorrect");
-        exit;
+require_once __DIR__ . '/../includes/helpers.php';
+require_login();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); header('Allow: POST'); exit; }
+require_once __DIR__ . '/../includes/db.php';
+$id = current_user()['id'];
+$stmt = $pdo->prepare('SELECT * FROM users WHERE id=?');
+$stmt->execute([$id]);
+$user = $stmt->fetch();
+if (!$user) { http_response_code(404); exit('Account not found.'); }
+try {
+    $name = trim($_POST['full_name'] ?? '');
+    $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    if ($name === '' || $username === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) throw new DomainException('Enter your name, username and a valid email.');
+    if (strlen($name) > 150 || strlen($username) > 80 || strlen($email) > 150 || strlen($phone) > 30) throw new DomainException('One or more profile fields are too long.');
+    $stmt = $pdo->prepare('SELECT id FROM users WHERE (username=? OR email=?) AND id<>?');
+    $stmt->execute([$username, $email, $id]);
+    if ($stmt->fetch()) throw new DomainException('Username or email is already in use.');
+    $hash = $user['password_md5'];
+    if (!empty($_POST['new_password']) || !empty($_POST['current_password']) || !empty($_POST['confirm_password'])) {
+        if (!verify_password($_POST['current_password'] ?? '', $hash)) throw new DomainException('Current password is incorrect.');
+        $password = $_POST['new_password'] ?? '';
+        if (strlen($password) < 8 || strlen($password) > 72 || strpos($password, "\0") !== false || $password !== ($_POST['confirm_password'] ?? '')) throw new DomainException('Use matching passwords between 8 and 72 characters.');
+        $hash = password_hash($password, PASSWORD_DEFAULT);
     }
-
-    if ($new !== $confirm) {
-        header("Location: profile.php?error=Passwords do not match");
-        exit;
-    }
-
-    $newHash = md5($new);
-
-    $pdo->prepare("UPDATE users SET password_md5=? WHERE id=?")
-        ->execute([$newHash, $userId]);
+    $avatar = save_upload('avatar', __DIR__ . '/uploads/avatars') ?? $user['avatar_path'];
+    $card = save_upload('id_card', __DIR__ . '/../storage/id_cards', true) ?? $user['id_card_path'];
+    $pdo->prepare('UPDATE users SET full_name=?,username=?,email=?,phone=?,avatar_path=?,id_card_path=?,password_md5=? WHERE id=?')
+        ->execute([$name, $username, $email, $phone, $avatar, $card, $hash, $id]);
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE id=?');
+    $stmt->execute([$id]);
+    $_SESSION['user'] = $stmt->fetch();
+    unset($_SESSION['user']['password_md5']);
+    redirect('profile.php?success=1');
+} catch (PDOException $exception) {
+    error_log($exception->getMessage());
+    redirect('profile.php?error=' . urlencode('Unable to save your profile. Please try again.'));
+} catch (DomainException | RuntimeException $exception) {
+    redirect('profile.php?error=' . urlencode($exception->getMessage()));
 }
-
-// ---------- UPDATE USER INFO ----------
-$update = $pdo->prepare("
-    UPDATE users 
-    SET full_name=?, username=?, email=?, phone=?, avatar_path=?, id_card_path=?
-    WHERE id=?
-");
-
-$update->execute([
-    $full_name, $username, $email, $phone,
-    $avatarName, $idCardName,
-    $userId
-]);
-
-header("Location: profile.php?success=1");
-exit;

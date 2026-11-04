@@ -21,21 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_room'])) {
     $fileName    = '';
 
     if ($name === '') $errors[] = "Name required";
-    if ($price === '') $errors[] = "Price required";
+    if (!is_numeric($price) || (float)$price <= 0 || (float)$price > 99999999) $errors[] = "Price required";
 
-    if (!empty($_FILES['cover']['name'])) {
-        $ext = strtolower(pathinfo($_FILES['cover']['name'], PATHINFO_EXTENSION));
-        $allowed = ['jpg','jpeg','png'];
-        if (!in_array($ext, $allowed)) {
-            $errors[] = "Invalid file type (only jpg, png)";
-        } else {
-            $safeName = 'room_' . time() . '_' . rand(1000,9999) . '.' . $ext;
-            $target = $uploadDir . $safeName;
-            if (!move_uploaded_file($_FILES['cover']['tmp_name'], $target)) {
-                $errors[] = "Failed to upload image.";
-            } else {
-                $fileName = $safeName;
-            }
+    if (!$errors) {
+        try {
+            $fileName = save_upload('cover', $uploadDir) ?? $fileName;
+        } catch (RuntimeException $exception) {
+            $errors[] = $exception->getMessage();
         }
     }
 
@@ -82,6 +74,7 @@ include __DIR__ . '/../../includes/admin_header.php';
   <?php endif; ?>
 
   <form method="POST" enctype="multipart/form-data">
+<?php echo csrf_field(); ?>
     <input type="hidden" name="create_room" value="1">
 
     <label>Name</label>

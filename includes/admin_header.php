@@ -3,7 +3,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 
 // Protect admin / host area
-if (!is_admin() && !is_host()) {
+if (!is_admin()) {
     header('HTTP/1.1 403 Forbidden');
     exit('Admin/Host only area.');
 }
@@ -11,7 +11,7 @@ if (!is_admin() && !is_host()) {
 $admin = current_user();
 
 // Base URL for assets (adjust folder name if needed)
-$base = "/Azurite-Rental-System/public/";
+$base = public_base();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,6 +27,8 @@ $base = "/Azurite-Rental-System/public/";
   <link rel="stylesheet" href="<?php echo $base; ?>assets/css/jquery.datetimepicker.min.css">
   <link rel="stylesheet" href="<?php echo $base; ?>assets/css/jquery-te-1.4.0.css">
   <link rel="stylesheet" href="<?php echo $base; ?>assets/css/matarial.css">
+<link rel="stylesheet" href="<?php echo $base; ?>assets/css/polish.css">
+<script src="<?php echo $base; ?>assets/js/forms.js" defer></script>
 </head>
 <body class="admin-body">
   <div class="admin-shell">

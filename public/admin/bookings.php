@@ -6,50 +6,18 @@ if (!is_admin()) {
     die("Admin only area.");
 }
 
-// Handle status updates
+require_once __DIR__ . '/../../includes/booking_service.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id'], $_POST['new_status'])) {
-    $bookingId  = (int)$_POST['booking_id'];
-    $newStatus  = $_POST['new_status'];
-
-    // Valid statuses
-    $allowed = ['Pending','Approved','Declined','Confirmed','CheckedIn','Completed','Cancelled'];
-    if (!in_array($newStatus, $allowed, true)) {
-        die("Invalid status selected.");
+    try {
+        update_booking_status($pdo, (int)$_POST['booking_id'], $_POST['new_status'], current_user());
+        set_flash('success', 'Booking status updated.');
+    } catch (DomainException $exception) {
+        set_flash('error', $exception->getMessage());
+    } catch (Throwable $exception) {
+        error_log($exception->getMessage());
+        set_flash('error', 'Unable to update this booking. Please try again.');
     }
-
-    // Fetch current booking
-    $stmt = $pdo->prepare("SELECT status FROM bookings WHERE id = ?");
-    $stmt->execute([$bookingId]);
-    $current = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($current) {
-        $oldStatus = $current['status'];
-
-        // Update booking
-        $upd = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ?");
-        $upd->execute([$newStatus, $bookingId]);
-
-        // Log event
-        $admin = current_user();
-        $adminId = $admin['id'] ?? null;
-
-        if ($adminId) {
-            $log = $pdo->prepare("
-                INSERT INTO booking_events (booking_id, actor_id, old_status, new_status, note)
-                VALUES (:bid, :aid, :old, :new, :note)
-            ");
-            $log->execute([
-                ':bid' => $bookingId,
-                ':aid' => $adminId,
-                ':old' => $oldStatus,
-                ':new' => $newStatus,
-                ':note'=> 'Status changed by admin'
-            ]);
-        }
-    }
-
-    header("Location: bookings.php");
-    exit;
+    redirect('bookings.php');
 }
 
 // Filter (optional) – by status
@@ -64,7 +32,7 @@ if ($statusFilter && $statusFilter !== 'All') {
 
 // Fetch all bookings with room + tenant
 $sql = "
-    SELECT 
+    SELECT
         b.*,
         r.name AS room_name,
         r.location_text,
@@ -148,6 +116,7 @@ include "../../includes/admin_header.php";
                     <td>
                         <a href="booking_view.php?id=<?php echo (int)$b['id']; ?>" class="btn-outline" style="padding:4px 8px;font-size:12px;">View</a>
                         <form method="post" style="margin-top:5px;">
+<?php echo csrf_field(); ?>
                             <input type="hidden" name="booking_id" value="<?php echo (int)$b['id']; ?>">
                             <select name="new_status" style="font-size:11px;">
                                 <?php foreach (['Pending','Approved','Declined','Confirmed','CheckedIn','Completed','Cancelled'] as $st): ?>

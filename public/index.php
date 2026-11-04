@@ -13,8 +13,9 @@ include __DIR__ . '/../includes/header.php';
 ?>
 <section class="hero">
   <div class="hero-text">
-    <h1>Find Your Next Stay with Azurite</h1>
-    <p>Curated apartments, villas and homestays along the Kenyan coast. Book secure stays in just a few clicks.</p>
+    <div class="eyebrow">Kenya’s coast, at your pace</div>
+    <h1>A little closer<br>to the coast.</h1>
+    <p>Find a place to slow down. Explore coastal homes, compare nightly rates and send your booking request directly to the host.</p>
     <div class="hero-actions">
       <a href="rooms.php" class="btn-primary">Browse Houses</a>
       <a href="#featured" class="btn-outline">View Featured</a>
@@ -70,7 +71,7 @@ include __DIR__ . '/../includes/header.php';
       </div>
     <?php endforeach; ?>
   <?php else: ?>
-    <p>No houses added yet. Login as admin and create a few.</p>
+    <p>New stays are on the way. Please check back soon.</p>
   <?php endif; ?>
 </div>
 <?php include __DIR__ . '/../includes/footer.php'; ?>

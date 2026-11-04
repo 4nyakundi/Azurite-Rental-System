@@ -45,6 +45,7 @@ include "../includes/header.php";
         background-color: #ffffff;
         border: 1px solid #e9ecef; /* Light border */
     ">
+<?php echo csrf_field(); ?>
 
         <h3 style="
             color: #495057;
@@ -110,7 +111,7 @@ include "../includes/header.php";
             margin-bottom: 25px;
             font-size: 1.5rem;
         ">Avatar</h3>
-        <img src="../uploads/avatars/<?php echo $user['avatar_path'] ?: 'default.png'; ?>" 
+        <img src="uploads/avatars/<?php echo $user['avatar_path'] ?: 'default.png'; ?>"
              style="
                 width: 100px; /* Slightly smaller for a cleaner look */
                 height: 100px;
@@ -134,7 +135,7 @@ include "../includes/header.php";
             margin-bottom: 25px;
             font-size: 1.5rem;
         ">ID Card</h3>
-        <img src="../uploads/id_cards/<?php echo $user['id_card_path'] ?: 'no_id.png'; ?>" 
+        <img src="<?php echo e(public_base()); ?>document.php?file=<?php echo $user['id_card_path'] ?: 'no_id.png'; ?>"
              style="
                 width: 250px; /* Slightly larger image */
                 border-radius: 10px;

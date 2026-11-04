@@ -13,8 +13,8 @@ $bookingId = (int)($_GET['id'] ?? 0);
 
 // Fetch booking ensuring room belongs to this host
 $stmt = $pdo->prepare("
-    SELECT 
-        b.*, 
+    SELECT
+        b.*,
         r.name AS room_name,
         r.location_text AS room_location,
         u.full_name AS tenant_name,
@@ -39,7 +39,7 @@ if (!$booking) {
 }
 
 $avatarUrl = "../uploads/avatars/" . ($booking['avatar_path'] ?: "default.png");
-$idCardUrl = "../uploads/id_cards/" . ($booking['id_card_path'] ?: "no_id.png");
+$idCardUrl = public_base() . 'document.php?file=' . ($booking['id_card_path'] ?: "no_id.png");
 
 // Allowed status transitions for host - matches the list in the status form
 // Note: Host typically cannot set 'Completed' (done by system/admin) or 'CheckedIn' (done by system/host)
@@ -61,6 +61,7 @@ $statuses = ['Pending','Approved','Declined','Confirmed','CheckedIn','Cancelled'
             <p><strong>Status:</strong> <span style="font-weight:bold; color: <?php echo $booking['status'] === 'Approved' ? 'green' : ($booking['status'] === 'Declined' ? 'red' : 'orange'); ?>;"><?php echo e($booking['status']); ?></span></p>
 
             <form method="post" action="bookings_update.php" style="margin-top:20px; border-top: 1px solid #eee; padding-top: 15px;">
+<?php echo csrf_field(); ?>
                 <input type="hidden" name="id" value="<?php echo $bookingId; ?>">
                 <label style="font-weight:600;">Update Status</label>
                 <select name="status" class="form-control" style="max-width:220px; margin-right: 10px; display: inline-block;">

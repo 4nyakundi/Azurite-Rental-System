@@ -15,50 +15,31 @@ if (!$room) die("Room not found.");
 
 // DELETE photo
 if (isset($_GET['delete'])) {
+    confirm_mutation('Delete this photo?');
     $photoId = (int)$_GET['delete'];
-    $delStmt = $pdo->prepare("SELECT image_path FROM room_photos WHERE id = :id");
-    $delStmt->execute([':id' => $photoId]);
+    $delStmt = $pdo->prepare("SELECT image_path FROM room_photos WHERE id = :id AND room_id = :room");
+    $delStmt->execute([':id' => $photoId, ':room' => $roomId]);
     $photo = $delStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($photo) {
-        unlink(__DIR__ . '/../uploads/room_photos/' . $photo['image_path']);
-        $pdo->prepare("DELETE FROM room_photos WHERE id = :id")->execute([':id' => $photoId]);
+        $file = __DIR__ . '/../uploads/room_photos/' . basename($photo['image_path']);
+        if (is_file($file)) unlink($file);
+        $pdo->prepare("DELETE FROM room_photos WHERE id = :id AND room_id = :room")->execute([':id' => $photoId, ':room' => $roomId]);
     }
     redirect("room_gallery.php?id=".$roomId);
 }
 
-// UPLOAD photo
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (empty($_FILES['photo']['name'])) {
-        $errors[] = "Please select a photo to upload.";
-    } else {
-        $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
-        $allowed = ['jpg','jpeg','png'];
-
-        if (!in_array($ext, $allowed)) {
-            $errors[] = "Invalid image type. Only JPG/PNG allowed.";
-        } else {
-            $safeName = "gallery_" . time() . "_" . rand(1000, 9999) . "." . $ext;
-            $target   = __DIR__ . '/../uploads/room_photos/' . $safeName;
-
-            if (!move_uploaded_file($_FILES['photo']['tmp_name'], $target)) {
-                $errors[] = "Failed to upload file.";
-            } else {
-                $pdo->prepare("
-                    INSERT INTO room_photos (room_id, image_path, sort_order, created_at)
-                    VALUES (:room, :img, 0, NOW())
-                ")->execute([
-                    ':room' => $roomId,
-                    ':img'  => $safeName
-                ]);
-
-                redirect("room_gallery.php?id=".$roomId);
-            }
-        }
+    try {
+        $name = save_upload('photo', __DIR__ . '/../uploads/room_photos');
+        if (!$name) throw new RuntimeException('Please choose a photo.');
+        $pdo->prepare('INSERT INTO room_photos (room_id,image_path,sort_order) VALUES (?,?,0)')->execute([$roomId, $name]);
+        redirect('room_gallery.php?id=' . $roomId);
+    } catch (RuntimeException $exception) {
+        $errors[] = $exception->getMessage();
     }
 }
-
 include __DIR__ . '/header.php';
 ?>
 
@@ -72,6 +53,7 @@ include __DIR__ . '/header.php';
 <?php endif; ?>
 
 <form method="post" enctype="multipart/form-data">
+<?php echo csrf_field(); ?>
   <label>Select Photo</label>
   <input type="file" name="photo" required>
 

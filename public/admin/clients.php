@@ -60,7 +60,7 @@ include __DIR__ . '/../../includes/admin_header.php';
             <td><?php echo e($u['phone']); ?></td>
             <td>
                 <?php if ($u['id_card_path']): ?>
-                    <img src="../uploads/id_cards/<?php echo $u['id_card_path']; ?>" width="60" style="border: 1px solid #007bff;">
+                    <img src="<?php echo e(public_base()); ?>document.php?file=<?php echo $u['id_card_path']; ?>" width="60" style="border: 1px solid #007bff;">
                 <?php else: ?>
                     <em>None</em>
                 <?php endif; ?>
@@ -103,7 +103,7 @@ include __DIR__ . '/../../includes/admin_header.php';
             <td><?php echo e($u['phone']); ?></td>
             <td>
                 <?php if ($u['id_card_path']): ?>
-                    <img src="../uploads/id_cards/<?php echo $u['id_card_path']; ?>" width="60">
+                    <img src="<?php echo e(public_base()); ?>document.php?file=<?php echo $u['id_card_path']; ?>" width="60">
                 <?php else: ?>
                     <em>None</em>
                 <?php endif; ?>

@@ -37,7 +37,7 @@ include __DIR__ . '/../../includes/admin_header.php';
 
     <?php if ($user['id_card_path']): ?>
         <h4>ID Card</h4>
-        <img src="../uploads/id_cards/<?php echo e($user['id_card_path']); ?>" 
+        <img src="<?php echo e(public_base()); ?>document.php?file=<?php echo e($user['id_card_path']); ?>"
              style="max-width:100%;border-radius:10px;">
     <?php endif; ?>
 

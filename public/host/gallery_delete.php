@@ -7,6 +7,7 @@ if (!is_host()) {
     die("Unauthorized");
 }
 
+confirm_mutation('Delete this photo?');
 $host = current_user();
 $photoId = (int)($_GET['id'] ?? 0);
 $roomId  = (int)($_GET['room_id'] ?? 0);

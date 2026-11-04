@@ -16,8 +16,8 @@ if (!$clientId) {
 // 2. Authorization and Data Fetching
 // Fetch client details ONLY IF they have a booking on one of the host's rooms.
 $sql = "
-SELECT 
-    u.id, u.full_name, u.username, u.email, u.phone, 
+SELECT
+    u.id, u.full_name, u.username, u.email, u.phone,
     u.avatar_path, u.id_card_path, u.created_at
 FROM users u
 WHERE u.id = :clientId
@@ -43,7 +43,7 @@ if (!$client) {
 }
 
 $avatarUrl = "../uploads/avatars/" . ($client['avatar_path'] ?: "default.png");
-$idCardUrl = "../uploads/id_cards/" . ($client['id_card_path'] ?: "no_id.png");
+$idCardUrl = public_base() . 'document.php?file=' . ($client['id_card_path'] ?: "no_id.png");
 
 include "header.php"; // Assuming your host panel uses header.php
 ?>
@@ -94,7 +94,7 @@ include "header.php"; // Assuming your host panel uses header.php
 <div class="client-detail-card">
     <h2 style="margin-bottom: 0;">Client Profile: <?php echo e($client['full_name']); ?></h2>
     <p style="color:#6c757d;">Member Since: <?php echo date('Y-m-d', strtotime($client['created_at'])); ?></p>
-    
+
     <hr style="margin: 20px 0;">
 
     <div class="client-info-grid">
@@ -107,7 +107,7 @@ include "header.php"; // Assuming your host panel uses header.php
 
         <div class="client-info-section client-media-section">
             <h3>Verification Media</h3>
-            
+
             <p style="margin-top: 10px;"><strong>Avatar:</strong></p>
             <img src="<?php echo $avatarUrl; ?>" class="avatar-img">
 
