@@ -9,3 +9,11 @@
 /tools/__pycache__/
 /tests/*.log
 /tests/__pycache__/
+node_modules/
+dist/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+*.local

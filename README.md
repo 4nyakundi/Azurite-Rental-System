@@ -1,3 +1,5 @@
+> **Firebase cloud version:** The new application is in `firebase-app/` and is deployed to https://airbnb-sys.web.app. See [FIREBASE.md](FIREBASE.md) for cloud setup, administrator onboarding and deployment. The instructions below describe the preserved PHP/XAMPP version.
+
 # Azurite Rental System
 
 A PHP and MariaDB rental application for coastal stays in Kenya. Tenants explore houses and request bookings; hosts manage their own listings, availability and guests; administrators manage the whole application. Prices are in Kenyan shillings and dates use Africa/Nairobi time.

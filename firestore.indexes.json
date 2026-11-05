@@ -1,0 +1,1 @@
+{ "indexes": [], "fieldOverrides": [{ "collectionGroup": "availability", "fieldPath": "days", "indexes": [] }, { "collectionGroup": "availability", "fieldPath": "blocks", "indexes": [] }] }

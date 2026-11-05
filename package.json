@@ -1,0 +1,15 @@
+{
+  "name": "azurite-rental-system",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test:rules": "firebase emulators:exec --only firestore,auth,storage --project demo-azurite \"node --test tests/firebase-rules.test.mjs\"",
+    "deploy": "npm run build && firebase deploy --only hosting,firestore --project airbnb-sys"
+  },
+  "dependencies": { "firebase": "13.2.0" },
+  "devDependencies": { "vite": "8.3.6", "@firebase/rules-unit-testing": "6.0.0" }
+}
